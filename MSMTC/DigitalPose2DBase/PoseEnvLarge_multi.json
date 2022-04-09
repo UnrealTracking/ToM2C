@@ -1,0 +1,30 @@
+{
+	"env_name": "PoseEnv-v0",
+	"max_steps": 100,
+	"cam_number": 4,
+	"visual_distance": 800,
+	"rotation_scale": 5,
+	"target_number": 5,
+	"discrete_actions": [
+		[0],
+		[1],
+		[-1]
+	],
+	"safe_start" :[
+		[  0,       0]
+    ],
+	"reset_area" : [-1250, 1250, -1250, 1250],
+	"cam_area" : [
+		[250,   750,  250,    750],
+		[250,   750,  -750,   -250],
+		[-1250, -750, -250,   250],
+        [-750,  -250,  250,   750],
+		[750,   1250, -250,   250],
+		[-750,  -250, -750,   -250]
+	],
+	"continous_actions_player": {
+		"high": [100,     30],
+		"low":  [50,     -30]
+	}
+
+}

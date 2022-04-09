@@ -17,10 +17,14 @@ All the environments have been included in the code, so there is no need to inst
 To train ToM2C in `MSMTC`, run this command:
 
 ```bash
-python main.py --env Pose-v3 --model ToM-v5 --workers 6 --norm-reward
+python main.py --env MSMTC-v3 --model ToM2C --workers 6 --norm-reward
 ```
 
-The main branch is the code of ToM2C in `MSMTC` environment. As for Cooperative Navigation, please change to the `CN` branch.
+To train ToM2C in `CN`, run this command:
+
+```bash
+python main.py --env CN --model ToM2C --workers 6 --env-steps 10 --A2C-steps 10 --norm-reward
+```
 
 ## Citation
 
