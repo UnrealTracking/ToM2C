@@ -121,6 +121,7 @@ def test(args, shared_model, optimizer, optimizer_ToM, train_modes, n_iters):
                         writer.add_scalar('test/reward', reward_sum_ep[0], n_iter)
                         writer.add_scalar('test/fps', fps, n_iter)
                     fps_all.append(fps)
+                    player.clean_buffer(player.done)
                         
                     #writer.add_scalar('test/eps_len', player.eps_len, n_iter)
                     break

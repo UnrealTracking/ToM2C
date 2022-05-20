@@ -36,7 +36,7 @@ class Agent(object):
         self.reward_mean = None
         self.reward_std = 1
         self.num_steps = 0
-        self.n_steps = 0
+        self.env_step = 0
         self.vk = 0
         self.state = state
         self.rank = 0
@@ -89,7 +89,6 @@ class Agent(object):
         return available_actions
 
     def action_train(self):
-        self.n_steps += 1
         if self.args.mask_actions:
             available_actions = self.get_available_actions()
             available_actions_data = available_actions.cpu().numpy()
@@ -128,6 +127,10 @@ class Agent(object):
 
         self.hself=hn_self
         self.hToM=hn_ToM
+
+        self.env_step += 1
+        if self.env_step >= self.env.max_steps:
+            self.done = True
 
     def action_test(self):
         if self.args.mask_actions:
@@ -170,6 +173,10 @@ class Agent(object):
         self.hself=hn_self
         self.hToM=hn_ToM
 
+        self.env_step += 1
+        if self.env_step >= self.env.max_steps:
+            self.done = True
+
     def reset(self):
         obs = self.env.reset()
         self.state = torch.from_numpy(np.array(obs)).float().to(self.device)
@@ -181,6 +188,7 @@ class Agent(object):
         self.model.sample_noise()
 
     def clean_buffer(self, done):
+        self.env_step = 0
         # outputs
         self.values = []
         self.log_probs = []
