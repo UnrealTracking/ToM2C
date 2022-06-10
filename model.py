@@ -475,7 +475,7 @@ class ToM2C_multi(torch.nn.Module):
             comm_domain = mask
             ToM_goal_mask = mask[:,idx].reshape(batch_size,num_agents,num_agents-1,1,1)
         else:
-            comm_domain = torch.zeros(batch_size, num_agents, num_agents, 1)
+            comm_domain = torch.zeros(batch_size, num_agents, num_agents, 1).to(self.device)
             comm_domain[:,idx] = 1
             comm_domain = comm_domain.bool()
             ToM_goal_mask = None
