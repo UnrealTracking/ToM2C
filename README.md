@@ -10,7 +10,7 @@ To install requirements:
 pip install -r requirements.txt
 ```
 
-All the environments have been included in the code, so there is no need to install Multi-sensor Multi-target Coverage(MSMTC) or MPE(Cooperative Navigation) additionnaly.
+All the environments have been included in the code, so there is no need to install Multi-sensor Multi-target Coverage(MSMTC) or MPE(Cooperative Navigation) additionally.
 
 ## Training
 
