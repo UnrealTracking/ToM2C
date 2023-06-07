@@ -647,10 +647,10 @@ class ToM2C_multi(torch.nn.Module):
             zero_probs = zero_probs.reshape(batch_size, num_agents, num_targets,2)
             a = probs.max(-1)[1]
             b = zero_probs.max(-1)[1]
-            real_edges = torch.sum(a ^ b,-1)
-            real_edges = 1 - (real_edges == 0).float()
+            real_edges = torch.sum(a ^ b,-1)  # 0 for no decision change, therefore unnecessary to communicate
+            real_edges = 1 - (real_edges == 0).float()  # necessary communicate edge
             real_edges = real_edges.unsqueeze(1).repeat(1, num_agents, 1)
-            edges_label = real_edges.reshape(-1,1)[comm_domain]
+            edges_label = real_edges.reshape(-1,1)[comm_domain.reshape(-1,1).bool()]
             
             return hn_self, hn_ToM, edge_logits, comm_edges.squeeze(-1), real_edges, edges_label
         

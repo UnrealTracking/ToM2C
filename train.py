@@ -150,7 +150,7 @@ def optimize_Policy(state, poses, real_actions, reward, masks, available_actions
         print(count)
     assert count == args.workers
     
-    # state, cam_state, reward, real_actions are to state only when being used
+    # state, cam_state, reward, real_actions are to device only when being used
     if "MSMTC" in args.env:
         state = state.reshape(count, max_steps, num_agents, num_both, obs_dim)#.to(device_share)
         real_actions = real_actions.reshape(count, max_steps, num_agents, num_targets, 1)#.to(device_share)
@@ -283,30 +283,34 @@ def optimize_Policy(state, poses, real_actions, reward, masks, available_actions
     return policy_loss_sum, value_loss_sum, Sparsity_loss_sum, entropies_all
 
 def reduce_comm(policy_data, args, params_comm, optimizer, lr_scheduler, shared_model, ori_model, device_share, env):
-    state, cam_states, real_actions, reward, comm_domains, available_actions= policy_data#, old_log_probs, value_pred 
+    state, poses, real_actions, reward, comm_domains, available_actions= policy_data#, old_log_probs, value_pred 
 
     num_agents = env.n
     num_targets = env.num_target
     max_steps = env.max_steps
     assert max_steps % args.A2C_steps == 0
 
-    batch_size, num_agents, obs_dim = state.size()
-    count = int(batch_size/max_steps)  # workers * args.train_eps
-    #assert count == args.train_eps * args.workers
-    
-    # state, cam_state, reward, real_actions are to state only when being used
-    state = state.reshape(count, max_steps, num_agents, obs_dim)#.to(device_share)
-    #batch_size, num_agents, cam_dim = cam_states.size()
-    #cam_states = cam_states.reshape(count, max_steps, num_agents, cam_dim)#.to(device_share)
-    batch_size, num_agents, r_dim = reward.size()
-    reward = reward.reshape(count, max_steps, num_agents, r_dim)#.to(device_share)
-    #real_actions = real_actions.reshape(count, max_steps, num_agents, num_targets, 1)#.to(device_share)
-    #comm_domains = comm_domains.reshape(count, max_steps, num_agents, num_agents, 1)
-    #old_log_probs = old_log_probs.reshape(count, max_steps, num_agents, num_targets, 1)
-    #value_pred = value_pred.reshape(count, max_steps, num_agents, 1)
-    
+    if "MSMTC" in args.env:
+        batch_size, num_agents, num_both, obs_dim = state.size()
+    elif "CN" in args.env:
+        batch_size, num_agents, obs_dim = state.size()
+    count = int(batch_size/max_steps)
+
+    # state, cam_state, reward, real_actions are to device only when being used
+    if "MSMTC" in args.env:
+        state = state.reshape(count, max_steps, num_agents, num_both, obs_dim)#.to(device_share)
+    elif "CN" in args.env:
+        state = state.reshape(count, max_steps, num_agents, obs_dim)#.to(device_share)
+
+    batch_size, num_agents, num_agents, cam_dim = poses.size()
+    poses = poses.reshape(count, max_steps, num_agents, num_agents, cam_dim)#.to(device_share)
+
+    comm_domains = comm_domains.reshape(count, max_steps, num_agents, num_agents, 1)
+    h_ToM = torch.zeros(count, num_agents, num_agents, args.lstm_out).to(device_share)
+    hself = torch.zeros(count, num_agents, args.lstm_out ).to(device_share)
     if args.mask_actions:
         available_actions = available_actions.reshape(count, max_steps, num_agents, num_targets, -1)
+
     
     comm_loss_sum = torch.zeros(1).to(device_share)
 
@@ -329,9 +333,9 @@ def reduce_comm(policy_data, args, params_comm, optimizer, lr_scheduler, shared_
             available_action = available_actions[:,step].to(device_share) if args.mask_actions else None
 
             hn_self, hn_ToM, edge_logit, curr_edges,_ , _= shared_model(state[:,step].to(device_share), hself, h_ToM,\
-                 available_actions= available_action, train_comm = args.train_comm)
+                 poses[:,step].to(device_share), comm_domains[:,step].to(device_share), available_actions= available_action, train_comm = args.train_comm)
             _, _, _, _, best_edges, edge_label= ori_model(state[:,step].to(device_share), hself.detach(), h_ToM.detach(),\
-                 available_actions= available_action, train_comm = args.train_comm)
+                 poses[:,step].to(device_share), comm_domains[:,step].to(device_share), available_actions= available_action, train_comm = args.train_comm)
             hself = hn_self
             hToM = hn_ToM        
             
@@ -364,6 +368,7 @@ def reduce_comm(policy_data, args, params_comm, optimizer, lr_scheduler, shared_
             '''
             loss_0 = CE_criterion(logit_0, label_0.long()) if size_0 > 0 else 0
             loss_1 = CE_criterion(logit_1, label_1.long()) if size_1 > 0 else 0
+            #print(CE_criterion(edge_logit,edge_label.long()), loss_0+loss_1)
             comm_loss +=  loss_0 + loss_1
         #print(logit_0[:5,0].reshape(-1).data)
         shared_model.zero_grad()
@@ -439,7 +444,7 @@ def train(args, shared_model, optimizer_Policy, optimizer_ToM, train_modes, n_it
         ori_model = build_model(env, args, device_share)
         ori_model = ori_model.to(device_share)
         ori_state = torch.load(
-            "./trainedModel/best.pth",
+            args.load_model_dir,
             map_location=lambda storage, loc: storage
         )
         ori_model.load_state_dict(ori_state['model'])
@@ -471,7 +476,7 @@ def train(args, shared_model, optimizer_Policy, optimizer_ToM, train_modes, n_it
             data_list = load_data(args, Policy_history)
             comm_loss = reduce_comm(data_list, args, params_comm, optimizer_comm, lr_scheduler, shared_model, ori_model, device_share, env)
             writer.add_scalar('train/comm_loss', comm_loss.sum(), sum(n_iters))
-            print("comm_loss:",comm_loss)
+            print("comm_loss:",comm_loss.item())
             if comm_loss.sum() < 1:
                 break
         else:

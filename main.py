@@ -37,8 +37,8 @@ parser.add_argument('--ToM-frozen', type=int, default=5, metavar='M', help='epis
 parser.add_argument('--env', default='MSMTC-v3', help='environment to train on')
 parser.add_argument('--optimizer', default='Adam', metavar='OPT', help='shares optimizer choice of Adam or RMSprop')
 parser.add_argument('--amsgrad', default=True, metavar='AM', help='Adam optimizer amsgrad parameter')
-parser.add_argument('--load-coordinator-dir', default=None, metavar='LMD', help='folder to load trained models from')
-parser.add_argument('--load-executor-dir', default=None, metavar='LMD', help='folder to load trained models from')
+parser.add_argument('--load-model-dir', default=None, metavar='LMD', help='folder to load trained models from')
+parser.add_argument('--load-executor-dir', default=None, metavar='LMD', help='folder to load trained low-level policy models from')
 parser.add_argument('--log-dir', default='logs/', metavar='LG', help='folder to save logs')
 parser.add_argument('--model', default='ToM2C', metavar='M', help='ToM2C')
 parser.add_argument('--gpu-ids', type=int, default=-1, nargs='+', help='GPUs to use [-1 CPU only] (default: -1)')
@@ -92,11 +92,11 @@ def start():
     env.close()
     del env
 
-    if args.load_coordinator_dir is not None:
+    if args.load_model_dir is not None:
         saved_state = torch.load(
-            args.load_coordinator_dir,
+            args.load_model_dir,
             map_location=lambda storage, loc: storage)
-        if args.load_coordinator_dir[-3:] == 'pth':
+        if args.load_model_dir[-3:] == 'pth':
             shared_model.load_state_dict(saved_state['model'], strict=False)
         else:
             shared_model.load_state_dict(saved_state)
