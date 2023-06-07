@@ -17,14 +17,22 @@ All the environments have been included in the code, so there is no need to inst
 To train ToM2C in `MSMTC`, run this command:
 
 ```bash
-python main.py --env MSMTC-v3 --model ToM2C --workers 6 --norm-reward --gpu-ids 0
+python main.py --env MSMTC-v3 --model ToM2C --workers 6 --norm-reward
 ```
 
 To train ToM2C in `CN`, run this command:
 
 ```bash
-python main.py --env CN --model ToM2C --workers 6 --env-steps 10 --A2C-steps 10 --norm-reward --gpu-ids 0
+python main.py --env CN --model ToM2C --workers 6 --env-steps 10 --A2C-steps 10 --norm-reward
 ```
+
+After running the above command, you can run the following command respectively to do `Communication Reduction` mentioned in the paper:
+
+```bash
+python main.py --env MSMTC-v3 --model ToM2C --workers 6 --norm-reward  --train-comm --load-model-dir [trained_model_file_path]
+```
+
+The above command is for cpu training. If you want to train the model on GPU, try to add `--gpu-ids [cuda_device_id]` in the command.
 
 ## Citation
 
