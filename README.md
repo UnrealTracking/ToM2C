@@ -32,7 +32,7 @@ After running the above command, you can run the following command respectively 
 python main.py --env MSMTC-v3 --model ToM2C --workers 6 --norm-reward  --train-comm --load-model-dir [trained_model_file_path]
 ```
 
-The above command is for cpu training. If you want to train the model on GPU, try to add `--gpu-ids [cuda_device_id]` in the command.
+The above command is for cpu training. If you want to train the model on GPU, try to add `--gpu-id [cuda_device_id]` in the command. Note that this implementation does NOT support multi-gpu training.
 
 ## Citation
 
