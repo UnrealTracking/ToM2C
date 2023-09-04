@@ -18,7 +18,7 @@ def test(args, shared_model, optimizer, optimizer_ToM, train_modes, n_iters):
     ptitle('Test Agent')
     n_iter = 0
     writer = SummaryWriter(os.path.join(args.log_dir, 'Test'))
-    gpu_id = args.gpu_ids[-1]
+    gpu_id = args.gpu_id[-1]
     log = {}
     print(os.path.isdir(args.log_dir))
     setup_logger('{}_log'.format(args.env),

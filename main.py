@@ -41,7 +41,7 @@ parser.add_argument('--load-model-dir', default=None, metavar='LMD', help='folde
 parser.add_argument('--load-executor-dir', default=None, metavar='LMD', help='folder to load trained low-level policy models from')
 parser.add_argument('--log-dir', default='logs/', metavar='LG', help='folder to save logs')
 parser.add_argument('--model', default='ToM2C', metavar='M', help='ToM2C')
-parser.add_argument('--gpu-ids', type=int, default=-1, nargs='+', help='GPUs to use [-1 CPU only] (default: -1)')
+parser.add_argument('--gpu-id', type=int, default=-1, nargs='+', help='GPU to use [-1 CPU only] (default: -1)')
 parser.add_argument('--norm-reward', dest='norm_reward', action='store_true', default='True', help='normalize reward')
 parser.add_argument('--train-comm', dest='train_comm', action='store_true', help='train comm')
 parser.add_argument('--random-target', dest='random_target', action='store_true', default='True', help='random target')
@@ -71,18 +71,19 @@ def start():
     if args.gamma_rate == 0:
         args.gamma = 0.9
         args.env_steps *= 5
-    if args.gpu_ids == -1:
+    if args.gpu_id == -1:
         torch.manual_seed(args.seed)
-        args.gpu_ids = [-1]
+        args.gpu_id = [-1]
         device_share = torch.device('cpu')
         mp.set_start_method('spawn')
     else:
         torch.cuda.manual_seed(args.seed)
         mp.set_start_method('spawn', force=True)
-        if len(args.gpu_ids) > 1:
-            device_share = torch.device('cpu')
+        if len(args.gpu_id) > 1:
+            raise AssertionError("Do not support multi-gpu training")
+            #device_share = torch.device('cpu')
         else:
-            device_share = torch.device('cuda:' + str(args.gpu_ids[-1]))
+            device_share = torch.device('cuda:' + str(args.gpu_id[-1]))
     #device_share = torch.device('cuda:0')
     env = create_env(args.env, args)
     assert env.max_steps % args.A2C_steps == 0

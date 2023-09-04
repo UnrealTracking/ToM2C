@@ -405,17 +405,18 @@ def train(args, shared_model, optimizer_Policy, optimizer_ToM, train_modes, n_it
     n_iter = 0
     writer = SummaryWriter(os.path.join(args.log_dir, 'Train'))
     ptitle('Training')
-    gpu_id = args.gpu_ids[rank % len(args.gpu_ids)]
+    gpu_id = args.gpu_id[rank % len(args.gpu_id)]
     torch.manual_seed(args.seed + rank)
     env_name = args.env
 
     if gpu_id >= 0:
         torch.cuda.manual_seed(args.seed + rank)
         device = torch.device('cuda:' + str(gpu_id))
-        if len(args.gpu_ids) > 1:
-            device_share = torch.device('cpu')
+        if len(args.gpu_id) > 1:
+            raise AssertionError("Do not support multi-gpu training")
+            #device_share = torch.device('cpu')
         else:
-            device_share = torch.device('cuda:' + str(args.gpu_ids[-1]))
+            device_share = torch.device('cuda:' + str(args.gpu_id[-1]))
     else:
         device_share = torch.device('cpu')
     #device_share = torch.device('cuda:0')
