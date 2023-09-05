@@ -16,7 +16,7 @@ class Scenario(BaseScenario):
             if num_targets == -1:
                 raise AssertionError("Number of targets is not assigned")
             else:
-                num_landmarks == num_targets
+                num_landmarks = num_targets
         world.collaborative = False
         world.discrete_action = True
         world.num_agents_obs = 2
