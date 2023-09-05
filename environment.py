@@ -2,10 +2,10 @@ from __future__ import division
 import numpy as np
 import time
 
-def create_env(env_id, args, rank=-1, num_agents=-1, num_targets=-1):
+def create_env(env_id, args, rank=-1):
     if 'MSMTC' in env_id:
         import MSMTC.DigitalPose2D as poseEnv
-        env = poseEnv.gym.make(env_id, args.render_save, num_agents=num_agents,num_targets=num_targets)
+        env = poseEnv.gym.make(env_id, args)
         # adjust env steps according to args
         env.max_steps = args.env_steps
         return env
@@ -16,7 +16,7 @@ def create_env(env_id, args, rank=-1, num_agents=-1, num_targets=-1):
         # load scenario from script
         scenario = scenarios.load(scenario_name + ".py").Scenario()
         # create world
-        world = scenario.make_world()
+        world = scenario.make_world(args.num_agents, args.num_targets)
         # create multiagent environment
         env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation)
         env_wrap = env_wrapper(env, args)

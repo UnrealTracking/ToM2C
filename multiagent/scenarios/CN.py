@@ -5,12 +5,18 @@ import random
 
 
 class Scenario(BaseScenario):
-    def make_world(self):
+    def make_world(self, num_agents, num_targets):
         world = World()
         # set any world properties first
         world.dim_c = 0
-        num_agents = 7
-        num_landmarks = 7
+        if num_agents == -1:
+            num_agents = 3
+            num_landmarks = 3
+        else:
+            if num_targets == -1:
+                raise AssertionError("Number of targets is not assigned")
+            else:
+                num_landmarks == num_targets
         world.collaborative = False
         world.discrete_action = True
         world.num_agents_obs = 2

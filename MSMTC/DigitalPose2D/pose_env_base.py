@@ -11,21 +11,17 @@ from datetime import datetime
 from MSMTC.DigitalPose2D.render import render
 from model import A3C_Single
 from utils import goal_id_filter
-from main import parser
+#from main import parser
 import random 
 
-args = parser.parse_args()
+#args = parser.parse_args()
 
 
 class Pose_Env_Base:
-    def __init__(self, reset_type,
+    def __init__(self, reset_type, args,
                  nav='Goal',  # Random, Goal
                  config_path="PoseEnvLarge_multi.json",
-                 render_save=False,
                  setting_path=None,
-                 slave_rule=args.load_executor_dir is None,
-                 num_agents = -1,
-                 num_targets = -1
                  ):
         self.nav = nav
         self.reset_type = reset_type
@@ -39,12 +35,12 @@ class Pose_Env_Base:
 
         self.env_name = setting['env_name']
 
-        if num_agents == -1:
+        if args.num_agents == -1:
             self.n = setting['cam_number']
             self.num_target = setting['target_number']
         else:
-            self.n = num_agents
-            self.num_target = num_targets
+            self.n = args.num_agents
+            self.num_target = args.num_targets
         
         self.cam_area = np.array(setting['cam_area'])
         self.reset_area = setting['reset_area']
@@ -80,7 +76,7 @@ class Pose_Env_Base:
             self.observation_space = np.zeros((self.n, self.num_target+self.num_obstacle, self.state_dim), int)
 
         # render 
-        self.render_save = render_save
+        self.render_save = args.render_save
         self.render = args.render
 
         # communication edges for render
@@ -104,7 +100,8 @@ class Pose_Env_Base:
             self.random_agents = [GoalNavAgent(i, self.continous_actions_player, self.cam, self.visual_distance, self.reset_area)
                                   for i in range(self.num_target)]
 
-        self.slave_rule = slave_rule
+        self.slave_rule = (args.load_executor_dir is None)
+
         if not self.slave_rule:
             self.device = torch.device('cpu')
             self.slave = A3C_Single(np.zeros((1, 1, 4)), [spaces.Discrete(3)], args)

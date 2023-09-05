@@ -26,10 +26,12 @@ To train ToM2C in `CN`, run this command:
 python main.py --env CN --model ToM2C --workers 6 --env-steps 10 --A2C-steps 10 --norm-reward
 ```
 
+Note that the command above will load the default environment described in the paper. If you want to change the number of agents and targets, please refer to the `num-agents` and `num-targets` arguments.
+
 After running the above command, you can run the following command respectively to do `Communication Reduction` mentioned in the paper:
 
 ```bash
-python main.py --env MSMTC-v3 --model ToM2C --workers 6 --norm-reward  --train-comm --load-model-dir [trained_model_file_path]
+python main.py --env MSMTC-v3 --model ToM2C --workers 6 --norm-reward --train-comm --load-model-dir [trained_model_file_path]
 ```
 
 The above command is for cpu training. If you want to train the model on GPU, try to add `--gpu-id [cuda_device_id]` in the command. Note that this implementation does NOT support multi-gpu training.
