@@ -33,6 +33,7 @@ class env_wrapper:
         self.observation_space = np.zeros([self.n, self.num_target, 2])
         self.action_space = np.zeros([self.n,self.num_target,1])
         self.max_steps = args.env_steps
+        self.render = args.render
         
     def rule_policy(self,obs):
         x_rel = obs[0]
@@ -52,7 +53,7 @@ class env_wrapper:
         action = np.array(action)
         return action
 
-    def step(self, goals_n, render = False):
+    def step(self, goals_n):
         #print(goals_n)
         goals_n = np.squeeze(goals_n)
         keep = 10
@@ -69,7 +70,7 @@ class env_wrapper:
                 act_low_n.append(self.rule_policy(obs_low))
             
             obs_n, rew, done_n, info_n = self.env.step(act_low_n)
-            if render:
+            if self.render:
                 self.env.render()
                 time.sleep(0.1)
             rew_ave += rew[0]
