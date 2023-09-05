@@ -49,7 +49,7 @@ python render_test.py --env CN --model ToM2C --render --env-steps 10 --load-mode
 In `MSMTC`:
 
 ```bash
-python main.py --env MSMTC-v3 --model ToM2C --render --env-steps 20 --load-model-dir [trained_model_file_path]
+python render_test.py --env MSMTC-v3 --model ToM2C --render --env-steps 20 --load-model-dir [trained_model_file_path]
 ```
 
 ## Citation
