@@ -58,7 +58,7 @@ def worker(rank, args, shared_model, train_modes, n_iters, curr_env_steps, ToM_c
     count_eps = 0
     #max_steps = env.max_steps
     while True:
-        if "Pose" in args.env and args.random_target:
+        if "MSMTC" in args.env and args.random_target:
             p = 0.7 - (env.max_steps/20 -1) * 0.1
         
             env.target_type_prob = [p, 1-p]
