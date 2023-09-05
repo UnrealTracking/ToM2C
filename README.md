@@ -36,6 +36,22 @@ python main.py --env MSMTC-v3 --model ToM2C --workers 6 --norm-reward --train-co
 
 The above command is for cpu training. If you want to train the model on GPU, try to add `--gpu-id [cuda_device_id]` in the command. Note that this implementation does NOT support multi-gpu training.
 
+## Rendering
+
+After training, you can load the trained model and render its behavior by the following command.
+
+In `CN`:
+
+```bash
+python render_test.py --env CN --model ToM2C --render --env-steps 10 --load-model-dir [trained_model_file_path]
+```
+
+In `MSMTC`:
+
+```bash
+python main.py --env MSMTC-v3 --model ToM2C --render --env-steps 20 --load-model-dir [trained_model_file_path]
+```
+
 ## Citation
 
 If you found ToM2C useful, please consider citing:
