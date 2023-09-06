@@ -26,7 +26,6 @@ parser.add_argument('--entropy', type=float, default=0.005, metavar='T', help='p
 parser.add_argument('--grad-entropy', type=float, default=1.0, metavar='T', help='parameter for entropy (default: 0.01)')
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
 parser.add_argument('--workers', type=int, default=1, metavar='W', help='how many training processes to use (default: 32)')
-#parser.add_argument('--punish-rate', type=float, default=0.0, metavar='W', help='punish tracking same target')
 parser.add_argument('--A2C-steps', type=int, default=20, metavar='NS', help='number of forward steps in A2C (default: 300)')
 parser.add_argument('--env-steps', type=int, default=20, metavar='NS', help='number of steps in one env episode')
 parser.add_argument('--start-eps', type=int, default=2000, metavar='NS', help='number of episodes before increasing gamma and env steps')
@@ -51,7 +50,6 @@ parser.add_argument('--render', dest='render', action='store_true', help='render
 parser.add_argument('--fix', dest='fix', action='store_true', help='fix random seed')
 parser.add_argument('--shared-optimizer', dest='shared_optimizer', action='store_true', help='use an optimizer without shared statistics.')
 parser.add_argument('--train-mode', type=int, default=-1, metavar='TM', help='his')
-parser.add_argument('--input-size', type=int, default=80, metavar='IS', help='input image size')
 parser.add_argument('--lstm-out', type=int, default=32, metavar='LO', help='lstm output size')
 parser.add_argument('--sleep-time', type=int, default=0, metavar='LO', help='seconds')
 parser.add_argument('--max-step', type=int, default=3000000, metavar='LO', help='max learning steps')
@@ -149,9 +147,6 @@ def start():
     Policy_history = manager.list()
     step_history = manager.list()
     loss_history = manager.list()
-
-    #if 'ToM' in args.model:
-    #    args.ToM_file = os.path.join(args.log_dir, 'ToM.json')
 
     for rank in range(0, args.workers):
         p = mp.Process(target=worker, args=(rank, args, shared_model, train_modes, n_iters, curr_env_steps, ToM_count, ToM_history, Policy_history, step_history, loss_history))
