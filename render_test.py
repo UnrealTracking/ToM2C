@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(description='render')
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
 parser.add_argument('--test-eps', type=int, default=5, metavar='M', help='testing episode length')
 parser.add_argument('--env', default='simple', metavar='Pose-v0', help='environment to train on (default: Pose-v0|Pose-v1)')
-parser.add_argument('--load-coordinator-dir', default=None, help='folder to load trained high-level models from')
+parser.add_argument('--load-model-dir', default=None, help='folder to load trained high-level models from')
 parser.add_argument('--load-executor-dir', default=None, help='folder to load trained low-level models from')
 parser.add_argument('--env-steps', type=int, default=20, help='env steps')
 parser.add_argument('--model', default='single', metavar='M', help='multi-shapleyV|')
@@ -53,7 +53,7 @@ def render_test(args):
     player.model = build_model(player.env, args, device).to(device)
     player.model.eval()
     
-    saved_state = torch.load(args.load_coordinator_dir)
+    saved_state = torch.load(args.load_model_dir)
     player.model.load_state_dict(saved_state['model'],strict=False)
 
     for i_episode in range(args.test_eps):
