@@ -32,7 +32,6 @@ class HLoss(nn.Module):
         return b
 
 def optimize_ToM(state, poses, masks, available_actions, args, params, optimizer_ToM, shared_model, device_share, env):
-    #print(optimizer_ToM.param_groups[0]['lr'])
     num_agents = env.n
     num_targets = env.num_target
     max_steps = env.max_steps
@@ -61,8 +60,6 @@ def optimize_ToM(state, poses, masks, available_actions, args, params, optimizer
     if args.mask_actions:
         available_actions = available_actions.reshape(count, max_steps, num_agents, num_targets, -1)
 
-    ToM_goals = None
-    real_goals = None
     ToM_loss_sum = torch.zeros(1).to(device_share)
     ToM_target_loss_sum = torch.zeros(1).to(device_share)
     ToM_target_acc_sum = torch.zeros(1).to(device_share)
@@ -126,8 +123,8 @@ def optimize_ToM(state, poses, masks, available_actions, args, params, optimizer
         ToM_target_loss_sum += ToM_target_loss
         ToM_target_acc_sum += ToM_target_acc
 
-    print("ToM_loss =",ToM_loss_sum.sum().data)
-    print("ToM Target loss=",ToM_target_loss_sum.sum().data)
+    print("ToM_loss =", ToM_loss_sum.sum().data)
+    print("ToM Target loss=", ToM_target_loss_sum.sum().data)
     cnt_all = (num_agents * (num_agents-1) * num_targets * batch_size)
     ToM_loss_mean = ToM_loss_sum/cnt_all
     ToM_target_loss_mean = ToM_target_loss_sum/cnt_all
@@ -168,23 +165,17 @@ def optimize_Policy(state, poses, real_actions, reward, masks, available_actions
     
     hself = torch.zeros(count, num_agents, args.lstm_out ).to(device_share)
     #hothers = torch.zeros(count, num_agents, num_agents-1, args.lstm_out).to(device_share)
-    hself_start = hself.clone().detach() # save the intial hidden state for every args.num_steps
+    hself_start = hself.clone().detach()  # save the intial hidden state for every args.num_steps
     hToM_start = h_ToM.clone().detach()
     if args.mask_actions:
         available_actions = available_actions.reshape(count, max_steps, num_agents, num_targets, -1)
-
-    values = []
-    entropies = []
-    log_probs = []
-    rewards = []
-    edge_logits = []
     
     policy_loss_sum = torch.zeros(count, num_agents, num_targets, 1).to(device_share)
     value_loss_sum = torch.zeros(count, num_agents, 1).to(device_share)
     entropies_all = torch.zeros(1).to(device_share)
     Sparsity_loss_sum = torch.zeros(count, 1).to(device_share)
 
-    for seg in range(seg_num):
+    for seg in range(seg_num): # loop for every args.A2C_steps
         for train_loop in range(args.policy_train_loops):
             hself = hself_start.clone().detach()
             h_ToM = hToM_start.clone().detach()
@@ -228,9 +219,6 @@ def optimize_Policy(state, poses, real_actions, reward, masks, available_actions
 
             Sparsity_loss = torch.zeros(count, 1).to(device_share)
 
-            KL_criterion = torch.nn.KLDivLoss(reduction='sum')
-            #KL_single = torch.nn.KLDivLoss(reduction='none')
-            BCE_criterion = torch.nn.BCELoss(reduction='sum')
             criterionH = HLoss()
             edge_prior = torch.FloatTensor(np.array([0.7, 0.3])).to(device_share)
             gae = torch.zeros(count, num_agents, 1).to(device_share)
@@ -253,7 +241,6 @@ def optimize_Policy(state, poses, real_actions, reward, masks, available_actions
                     policy_loss = policy_loss - (w_entropies * entropies[i].sum()) - (log_probs[i] * gae_duplicate).sum()
 
                 entropies_sum += entropies[i].sum()
-                #print(i,entropies[i].sum())
 
                 edge_logit = edge_logits[i]#.reshape(count * num_agents * num_agents, -1)  # k * 2
                 Sparsity_loss += -criterionH(edge_logit, edge_prior)
@@ -273,17 +260,11 @@ def optimize_Policy(state, poses, real_actions, reward, masks, available_actions
         value_loss_sum += value_loss
         Sparsity_loss_sum += Sparsity_loss
         entropies_all += entropies_sum
-    
-    '''
-    print(policy_loss_sum.sum() - real_policy_loss.sum())
-    print(value_loss_sum.sum() - real_value_loss.sum())
-    print(Sparsity_loss_sum.sum()- real_sparsity_loss.sum())
-    print(entropies_all.sum() - real_entropy_sum.sum())
-    '''
+
     return policy_loss_sum, value_loss_sum, Sparsity_loss_sum, entropies_all
 
 def reduce_comm(policy_data, args, params_comm, optimizer, lr_scheduler, shared_model, ori_model, device_share, env):
-    state, poses, real_actions, reward, comm_domains, available_actions= policy_data#, old_log_probs, value_pred 
+    state, poses, real_actions, reward, comm_domains, available_actions = policy_data
 
     num_agents = env.n
     num_targets = env.num_target
@@ -402,7 +383,6 @@ def load_data(args, history):
 
 def train(args, shared_model, optimizer_Policy, optimizer_ToM, train_modes, n_iters, curr_env_steps, ToM_count, ToM_history, Policy_history, step_history, loss_history, env=None):
     rank = args.workers
-    n_iter = 0
     writer = SummaryWriter(os.path.join(args.log_dir, 'Train'))
     ptitle('Training')
     gpu_id = args.gpu_id[rank % len(args.gpu_id)]
@@ -423,11 +403,6 @@ def train(args, shared_model, optimizer_Policy, optimizer_ToM, train_modes, n_it
     if env == None:
         env = create_env(env_name, args)
 
-    # # prepare model
-    # model = build_model(env, args, device)
-    # model = model.to(device)
-    # model.train()
-
     params = []
     params_ToM = []
     params_comm = []
@@ -439,7 +414,7 @@ def train(args, shared_model, optimizer_Policy, optimizer_ToM, train_modes, n_it
         if 'graph' in name:
             params_comm.append(param)
 
-    if args.train_comm:
+    if args.train_comm:  # train communication in supervised way (communication reduction)
         optimizer_comm = SharedAdam(params_comm, lr=0.001, amsgrad=args.amsgrad)
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer_comm, step_size=20, gamma=0.1)
         ori_model = build_model(env, args, device_share)
@@ -451,16 +426,15 @@ def train(args, shared_model, optimizer_Policy, optimizer_ToM, train_modes, n_it
         ori_model.load_state_dict(ori_state['model'])
         ori_model.eval()    
 
-    #ToM_len = args.ToM_frozen * args.workers * env.max_steps
     train_step_cnt = 0
-    while True:
+    while True:  # wait for all workers to finish collecting trajectories
         t1 = time.time()
         while True:
             flag = True
             curr_time = time.time()
             if curr_time - t1 > 180:
                 print("waiting too long for workers")
-                print("train modes:",train_modes)
+                print("train modes:", train_modes)
                 return
             for rank in range(args.workers):
                 if train_modes[rank] != -10:
@@ -477,7 +451,7 @@ def train(args, shared_model, optimizer_Policy, optimizer_ToM, train_modes, n_it
             data_list = load_data(args, Policy_history)
             comm_loss = reduce_comm(data_list, args, params_comm, optimizer_comm, lr_scheduler, shared_model, ori_model, device_share, env)
             writer.add_scalar('train/comm_loss', comm_loss.sum(), sum(n_iters))
-            print("comm_loss:",comm_loss.item())
+            print("comm_loss:", comm_loss.item())
             if comm_loss.sum() < 1:
                 break
         else:
@@ -486,12 +460,9 @@ def train(args, shared_model, optimizer_Policy, optimizer_ToM, train_modes, n_it
 
             policy_loss, value_loss, Sparsity_loss, entropies_sum =\
                 optimize_Policy(state, poses, real_actions, reward, masks, available_actions, args, params, optimizer_Policy, shared_model, device_share, env)
-            
-            #n_steps = global_steps_count
-            #global_steps_count += state.size()[0]
-            #print(global_steps_count)
-            n_steps = sum(n_iters) #* env.max_steps
 
+            # log training information
+            n_steps = sum(n_iters)  # global_steps_count
             writer.add_scalar('train/policy_loss_sum', policy_loss.sum(), n_steps)
             writer.add_scalar('train/value_loss_sum', value_loss.sum(), n_steps)
             writer.add_scalar('train/Sparsity_loss_sum', Sparsity_loss.sum(), n_steps)
@@ -521,20 +492,7 @@ def train(args, shared_model, optimizer_Policy, optimizer_ToM, train_modes, n_it
                         ToM_history[rank] = []
                         ToM_count[rank] = 0
                     print("---------------------")
-                    
-                    '''
-                    # gradually increase gamma and env steps during training
-                    if args.gamma_rate > 0 and n_steps >= args.start_eps * 20 * args.workers and args.gamma < args.gamma_final: # and n_steps % (args.ToM_frozen * 2 * 20) == 0:
-                        if args.gamma > 0.4:
-                            args.gamma = args.gamma * (1 + args.gamma_rate/2)
-                        else:
-                            args.gamma = args.gamma * (1 + args.gamma_rate)
-                        new_env_step = int((args.gamma + 0.1)/0.2) * args.env_steps
-                        env.max_steps = new_env_step
-                        for rank in range(args.workers):
-                            curr_env_steps[rank] = new_env_step
-                    assert args.gamma < 0.95
-                    '''
+
             if args.gamma_rate > 0:
                 # add this one for schedule learning
                 if n_steps >= args.start_eps * 20 * args.workers and args.gamma < args.gamma_final and train_step_cnt % (args.ToM_frozen) == 0:
@@ -548,7 +506,7 @@ def train(args, shared_model, optimizer_Policy, optimizer_ToM, train_modes, n_it
                         for rank in range(args.workers):
                             curr_env_steps[rank] = new_env_step
 
-                print("gamma:",args.gamma)
+                print("gamma:", args.gamma)
                 assert args.gamma < 0.95
         for rank in range(args.workers):
             Policy_history[rank] = []

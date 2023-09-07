@@ -13,7 +13,6 @@ class Agent(object):
         self.model = model
         self.env = env
         self.num_agents = env.n
-        #self.num_targets = env.observation_space.shape[1]
         self.num_targets = env.num_target
         self.state_dim = env.observation_space.shape[2]
         self.model_name = args.model 
@@ -51,9 +50,6 @@ class Agent(object):
         self.poses = None # cam_dim=3 ndarray
         self.ToM_history = []
         self.Policy_history = []
-        #self.step_history = []
-        #self.loss_history = []
-
 
     def get_other_poses(self):
         # ToM2C requires the poses of each agent, so you need to declare how to get the poses for each env

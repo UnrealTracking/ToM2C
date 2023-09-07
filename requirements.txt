@@ -1,6 +1,6 @@
 gym == 0.10.5
 numpy == 1.15.1
-torch == 1.7.0+cu101
+torch == 1.7.0
 tensorboard
 torchvision
 opencv-python
