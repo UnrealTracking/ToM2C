@@ -182,12 +182,12 @@ def test(args, shared_model, optimizer, optimizer_ToM, train_modes, n_iters):
             model_dir = os.path.join(args.log_dir, 'best.pth')
         elif n_iter % 100000 == 0:
             model_dir = os.path.join(args.log_dir, ('new_'+str(n_iter)+'.pth').format(args.env))
-        else:
-            model_dir = os.path.join(args.log_dir, 'new.pth'.format(args.env))
+        #else:
+        new_model_dir = os.path.join(args.log_dir, 'new.pth'.format(args.env))
         state_to_save = {"model": player.model.state_dict(),
                          "optimizer": optimizer.state_dict()}
         torch.save(state_to_save, model_dir)
-
+        torch.save(state_to_save, new_model_dir)
         time.sleep(args.sleep_time)
 
         for rank in range(args.workers):

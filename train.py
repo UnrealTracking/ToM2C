@@ -113,8 +113,13 @@ def optimize_ToM(state, poses, masks, available_actions, args, params, optimizer
             loss = loss/(count)
             shared_model.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(params, 20)
-            optimizer_ToM.step()
+            all_grads = [p.grad for p in params]
+            flat_grads = torch.cat([g.view(-1) for g in all_grads])
+            if torch.isinf(flat_grads).any() or torch.isnan(flat_grads).any():
+                print("Detect inf/nan gradients, skip updating model")
+            else:
+                torch.nn.utils.clip_grad_norm_(params, 20)            
+                optimizer_ToM.step()
             
         # update hidden state start & loss sum
         hself_start = hself.clone().detach()
@@ -320,16 +325,16 @@ def reduce_comm(policy_data, args, params_comm, optimizer, lr_scheduler, shared_
             hself = hn_self
             hToM = hn_ToM        
             
-            #print(curr_edges)
-            #print(best_edges)
+            # print(curr_edges)
+            # print(best_edges)
             # idx = (best_edges == 1)
             # if curr_edges[idx].size()[0] > 0:
             #     print(torch.sum(1-curr_edges[idx])/curr_edges[idx].size()[0])
             # print(curr_edges.sum()/mini_batch_size)
-            #print("------------")
+            # print("------------")
             # print(edge_label)
             # print(edge_logit)
-            #print(edge_logit.shape, edge_label.shape)
+            # print(edge_logit.shape, edge_label.shape)
             edge_label = edge_label.detach()
             idx_0 = (edge_label == 0)
             idx_1 = (edge_label == 1)
@@ -357,7 +362,22 @@ def reduce_comm(policy_data, args, params_comm, optimizer, lr_scheduler, shared_
         torch.nn.utils.clip_grad_norm_(params_comm, 20)
         optimizer.step()
         lr_scheduler.step()
-        comm_loss_sum += comm_loss    
+        comm_loss_sum += comm_loss 
+        print(curr_edges.sum()/mini_batch_size)
+
+        # for param_group in optimizer.param_groups():
+        #     for param in param_group['params']:
+        #         for name, model_param in shared_model.named_parameters():
+        #             if model_param is param:
+        #                 print(name)
+                        
+        # for name,param in shared_model.named_parameters():
+        #     if 'graph' in name:
+        #         if param.grad is None:
+        #             print(name)
+        #         else:
+        #             print(name, torch.norm(param.grad))
+        #         # break   
 
     return comm_loss_sum
 
@@ -415,8 +435,8 @@ def train(args, shared_model, optimizer_Policy, optimizer_ToM, train_modes, n_it
             params_comm.append(param)
 
     if args.train_comm:  # train communication in supervised way (communication reduction)
-        optimizer_comm = SharedAdam(params_comm, lr=0.001, amsgrad=args.amsgrad)
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer_comm, step_size=20, gamma=0.1)
+        optimizer_comm = SharedAdam(params_comm, lr=0.02, amsgrad=args.amsgrad) #lr=0.1 for MSMTC
+        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer_comm, step_size=20, gamma=0.2) #lr=0.5 for MSMTC
         ori_model = build_model(env, args, device_share)
         ori_model = ori_model.to(device_share)
         ori_state = torch.load(
@@ -460,7 +480,6 @@ def train(args, shared_model, optimizer_Policy, optimizer_ToM, train_modes, n_it
 
             policy_loss, value_loss, Sparsity_loss, entropies_sum =\
                 optimize_Policy(state, poses, real_actions, reward, masks, available_actions, args, params, optimizer_Policy, shared_model, device_share, env)
-
             # log training information
             n_steps = sum(n_iters)  # global_steps_count
             writer.add_scalar('train/policy_loss_sum', policy_loss.sum(), n_steps)

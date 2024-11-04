@@ -23,7 +23,7 @@ python main.py --env MSMTC-v3 --model ToM2C --workers 6 --norm-reward
 To train ToM2C in `CN`, run this command:
 
 ```bash
-python main.py --env CN --model ToM2C --workers 6 --env-steps 10 --A2C-steps 10 --norm-reward
+python main.py --env CN --model ToM2C --num-agents 7 --num-targets 7 --workers 12 --env-steps 10 --A2C-steps 10 --norm-reward --gpu-id 0
 ```
 
 Note that the command above will load the default environment described in the paper. If you want to change the number of agents and targets, please refer to the `num-agents` and `num-targets` arguments.

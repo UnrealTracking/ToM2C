@@ -56,11 +56,28 @@ def render_test(args):
     saved_state = torch.load(args.load_model_dir)
     player.model.load_state_dict(saved_state['model'],strict=False)
 
+    ave_reward_list = []
+    comm_cnt_list = []
+    comm_bit_list = []
+
     for i_episode in range(args.test_eps):
         player.reset()
+        comm_cnt = 0
+        comm_bit = 0
+        reward_sum_ep = 0
+
         print(f"Episode:{i_episode}")
         for i_step in range(args.env_steps):
             player.action_test()
+            comm_cnt += player.comm_cnt
+            comm_bit += player.comm_bit
+            reward_sum_ep += player.reward
+        comm_cnt_list.append(comm_cnt/env.max_steps)
+        comm_bit_list.append(comm_bit/env.max_steps)
+        print('reward step',reward_sum_ep[0]/args.env_steps)
+        print('comm_edge', comm_cnt.data/args.env_steps)
+        print('comm_bandwidth', comm_bit.data/args.env_steps)
+        # print(comm_bit_list)
 
 if __name__ == '__main__':
     args = parser.parse_args()

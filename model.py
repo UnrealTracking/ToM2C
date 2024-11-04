@@ -623,6 +623,7 @@ class ToM2C_multi(torch.nn.Module):
         # new version of actor feature, reduce self feature dim
         self_feature = torch.cat((att_features, GRU_outputs), -1) 
         self_feature = self.reduce_dim(self_feature)
+        # ToM_msgs include [sum of msgs, sum of comm edge, max prob]
         ToM_msgs = torch.cat((max_prob, msgs),-1)
         #ToM_msgs = self.raise_dim(ToM_msgs)
         # actor_feature = actor_feature + ToM_msgs
